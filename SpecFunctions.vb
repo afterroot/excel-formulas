@@ -1,3 +1,7 @@
+' Functions By Sandip Vaghela
+' Version 1.1
+' Last Updated 09-04-21
+
 ' Do not Import this module as chars like '±' is lost while importing.
 
 Public Const plusMinusSign = "±", rangeSign = "-", minKeyword = "min", maxKeyowrd = "max", charSpace = " "
