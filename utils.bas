@@ -1,6 +1,6 @@
 ' Functions By Sandip Vaghela
-' Version 1.0
-' Last Updated 09-04-21
+' Version 1.1
+' Last Updated 20-04-21
 
 Attribute VB_Name = "utils"
 Function WHENBLANK(value, showIfBlank)
@@ -23,4 +23,12 @@ End Function
 
 Function CELLCOMMENT(cellRef As range)
     CELLCOMMENT = cellRef.comment.Text
+End Function
+
+Function ISFILEEXIST(path)
+    If Dir(path) = "" Then
+        ISFILEEXIST = False
+    Else
+        ISFILEEXIST = True
+    End If
 End Function

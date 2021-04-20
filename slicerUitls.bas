@@ -8,3 +8,15 @@ Sub slicerItemSelect(slicerName As String, ByVal selection As String)
         End If
     Next item
 End Sub
+
+
+' Snippets
+Sub HeavyCalculationExample()
+    ' Disable Automatic Calculation to Reduce CPU Usage for resource heavy procedures
+    Application.Calculation = xlCalculationManual
+
+    ' [WRITE CODE HERE]
+
+    ' Enable Automatic Calculation after slicer operation finish
+    Application.Calculation = xlCalculationAutomatic
+End Sub
