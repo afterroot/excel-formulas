@@ -1,6 +1,6 @@
 ' Functions By Sandip Vaghela
-' Version 1.1
-' Last Updated 09-04-21
+' Version 1.2
+' Last Updated 17-05-21
 
 ' Do not Import this module as chars like '±' is lost while importing.
 
@@ -8,17 +8,21 @@ Public Const plusMinusSign = "±", rangeSign = "-", minKeyword = "min", maxKeyow
 
 '
 ' Supported types (Without Units)
-' Ex. 36 ± 2, 34 - 38, Min 34
+' Ex. 36 ± 2, 34 - 38, Min 34, -36 ± 2, -38 - -34, Min -38
 '
 ' Supported types (With Units)
-' Ex. 36 ± 2 %, 34 - 38 %, Min 34 %
+' Ex. 36 ± 2 %, 34 - 38 %, Min 34 %, -36 ± 2 Unit, -38 - -34 Unit, Min -38 Unit
 '
 Function LCL(value, Optional default, Optional isPercent As Boolean, Optional roundTo As Integer) As Variant
     Dim myLeft, myRight, myLength, firstSpace
     posOfPlusMinus = InStr(value, plusMinusSign) ' Gets position of '±'
-    posOfRange = InStr(value, rangeSign) ' Gets position of '-'
+    posOfRange = InStr(2, value, rangeSign) ' Gets position of '-' (Support for negative values, InStr will find '-' from 2nd char)
     posOfMin = InStr(LCase(value), minKeyword) ' Gets position of 'min'
     posOfMax = InStr(LCase(value), maxKeyowrd) ' Gets position of 'max'
+    If posOfMin > 0 Or posOfMax > 0 Then
+        posOfPlusMinus = 0
+        posOfRange = 0
+    End If
     If IsMissing(default) Then
         default = 0
     End If
@@ -60,17 +64,21 @@ End Function
 
 '
 ' Supported types (Without Units)
-' Ex. 36 ± 2, 34 - 38, Max 38
+' Ex. 36 ± 2, 34 - 38, Max 38, -36 ± 2, -38 - -34, Max -34
 '
 ' Supported types (With Units)
-' Ex. 36 ± 2 %, 34 - 38 %, Max 38 %
+' Ex. 36 ± 2 %, 34 - 38 %, Max 38 %, -36 ± 2 Unit, -38 - -34 Unit, Max -34 Unit
 '
 Function UCL(value, Optional default, Optional isPercent As Boolean, Optional roundTo As Integer) As Variant
     Dim myLeft, myRight, myLength, firstSpace
     posOfPlusMinus = InStr(value, plusMinusSign) ' Gets position of '±'
-    posOfRange = InStr(value, rangeSign) ' Gets position of '-'
+    posOfRange = InStr(2, value, rangeSign) ' Gets position of '-' (Support for negative values, InStr will find '-' from 2nd char)
     posOfMin = InStr(LCase(value), minKeyword) ' Gets position of 'min'
     posOfMax = InStr(LCase(value), maxKeyowrd) ' Gets position of 'max'
+    If posOfMin > 0 Or posOfMax > 0 Then
+        posOfPlusMinus = 0
+        posOfRange = 0
+    End If
     If IsMissing(default) Then
         default = 0
     End If
@@ -131,19 +139,115 @@ Function ISBETWN(valueToCompare As Double, specText, Optional default, Optional 
     End If
 End Function
 
-' Pending
-Function LIMITTEXT(min As Double, maxOrTol As Double, limVariant)
+'
+' Returns SpecText from min and max values
+'
+Function LIMITTEXT(min As Double, maxOrTol As Double, limVariant, Optional unit)
     Select Case limVariant
-        Case 0
-            LIMITTEXT = Format((min + maxOrTol) / 2, "number") + Space(1) + plusMinusSign + Space(1) + Format(Abs((min - maxOrTol) / 2), "number")
-            Case 1
-            LIMITTEXT = Str(min) + Space(1) + plusMinusSign + Space(1) + Format(maxOrTol, "number")
-        Case 2
-            LIMITTEXT = Str(min) + Space(1) + rangeSign + Space(1) + Format(maxOrTol, "number")
+        Case 0 'Variant: PlusMinus
+            LIMITTEXT = Trim(((min + maxOrTol) / 2)) + Space(1) + plusMinusSign + Space(1) + Trim(Str(Abs((min - maxOrTol) / 2)))
+        Case 1 'Variant: Min
+            LIMITTEXT = "Min" + Space(1) + Trim(Str(min))
+        Case 2 'Variant: Max
+            LIMITTEXT = "Max" + Space(1) + Trim(Str(maxOrTol))
+        Case 3 'Variant: Range
+            LIMITTEXT = Trim(Str(min)) + Space(1) + rangeSign + Space(1) + Trim(Str(maxOrTol))
     End Select
+    If Not IsMissing(unit) Then
+        LIMITTEXT = LIMITTEXT + Space(1) + unit 'Append Unit at last if provided
+    End If
 End Function
 
 
+' Run tests to verify
 Sub test()
-    ISBETWN 0.5, "Min 50 %", 100, True
+    Dim testMin As Double, testMax As Double, plusMinusVariant As String, minVariant As String, _
+    maxVariant As String, rangeVariant As String, myResult As String
+    
+    'Positive Value Test
+    testMin = CDbl(2)
+    testMax = CDbl(4)
+    plusMinusVariant = LIMITTEXT(testMin, testMax, 0) 'PlusMinus Variant
+    minVariant = LIMITTEXT(testMin, testMax, 1) 'Min Variant
+    maxVariant = LIMITTEXT(testMin, testMax, 2) 'Max Variant
+    rangeVariant = LIMITTEXT(testMin, testMax, 3) 'Range Variant
+    
+    myResult = "Test Result:" + vbNewLine
+    myResult = myResult + vbNewLine + "Positive Values: "
+    
+    'PlusMinus Variant
+    myResult = myResult + vbNewLine + "plusMinusVariant: "
+    If plusMinusVariant = "3 ± 1" Then
+        myResult = myResult + "Pass"
+    ElseIf plusMinusVariant <> "3 ± 1" Then
+        myResult = myResult + "Fail"
+    End If
+    
+    'Min Variant
+    myResult = myResult + vbNewLine + "minVariant: "
+    If minVariant = "Min 2" Then
+        myResult = myResult + "Pass"
+    ElseIf minVariant <> "Min 2" Then
+        myResult = myResult + "Fail"
+    End If
+    
+    'Max Variant
+    myResult = myResult + vbNewLine + "maxVariant: "
+    If maxVariant = "Max 4" Then
+        myResult = myResult + "Pass"
+    ElseIf maxVariant <> "Max 4" Then
+        myResult = myResult + "Fail"
+    End If
+    
+    'Range Variant
+    myResult = myResult + vbNewLine + "rangeVariant: "
+    If rangeVariant = "2 - 4" Then
+        myResult = myResult + "Pass"
+    ElseIf rangeVariant <> "2 - 4" Then
+        myResult = myResult + "Fail"
+    End If
+    
+    'Negative Value Test
+    testMin = CDbl(-4)
+    testMax = CDbl(-2)
+    plusMinusVariant = LIMITTEXT(testMin, testMax, 0) 'PlusMinus Variant
+    minVariant = LIMITTEXT(testMin, testMax, 1) 'Min Variant
+    maxVariant = LIMITTEXT(testMin, testMax, 2) 'Max Variant
+    rangeVariant = LIMITTEXT(testMin, testMax, 3) 'Range Variant
+    myResult = myResult + vbNewLine + vbNewLine + "Negative Values: "
+    
+    'PlusMinus Variant
+    myResult = myResult + vbNewLine + "plusMinusVariant: "
+    If plusMinusVariant = "-3 ± 1" Then
+        myResult = myResult + "Pass"
+    ElseIf plusMinusVariant <> "-3 ± 1" Then
+        myResult = myResult + "Fail"
+    End If
+    
+    'Min Variant
+    myResult = myResult + vbNewLine + "minVariant: "
+    If minVariant = "Min -4" Then
+        myResult = myResult + "Pass"
+    ElseIf minVariant <> "Min -4" Then
+        myResult = myResult + "Fail"
+    End If
+    
+    'Max Variant
+    myResult = myResult + vbNewLine + "maxVariant: "
+    If maxVariant = "Max -2" Then
+        myResult = myResult + "Pass"
+    ElseIf maxVariant <> "Max -2" Then
+        myResult = myResult + "Fail"
+    End If
+    
+    'Range Variant
+    myResult = myResult + vbNewLine + "rangeVariant: "
+    If rangeVariant = "-4 - -2" Then
+        myResult = myResult + "Pass"
+    ElseIf rangeVariant <> "-4 - -2" Then
+        myResult = myResult + "Fail"
+    End If
+    
+    'Show Dialog at last
+    MsgBox (myResult)
 End Sub
